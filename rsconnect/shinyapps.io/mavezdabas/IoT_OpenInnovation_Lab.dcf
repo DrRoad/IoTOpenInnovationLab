@@ -2,8 +2,8 @@ name: IoT_OpenInnovation_Lab
 account: mavezdabas
 server: shinyapps.io
 appId: 133112
-bundleId: 599885
+bundleId: 603002
 url: https://mavezdabas.shinyapps.io/IoT_OpenInnovation_Lab/
-when: 1477705819.15593
+when: 1478050318.00188
 asMultiple: FALSE
 asStatic: FALSE

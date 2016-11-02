@@ -53,19 +53,24 @@ body <- dashboardBody(
   tabItems(
     tabItem(tabName = "newTempTab",
             includeScript('www/Control.Loading.js'),
-            # h2("Temperature/Air"),
             # Value Info Box
             # div(
-            #   valueBoxOutput("date",width = 5),
-            #   valueBoxOutput("temp",width = 5),
-            #   valueBoxOutput("humidity",width = 5),
-            #   valueBoxOutput("wind",width = 5)
-            #   
+            #   valueBoxOutput("date",width = 5)
+            #   # valueBoxOutput("temp",width = 5),
+            #   # valueBoxOutput("humidity",width = 5),
+            #   # valueBoxOutput("wind",width = 5)
+            # 
             # ),
+            fluidRow(
+              valueBoxOutput("date",width = 5),
+              valueBoxOutput("temp",width = 6)
+            ),
             h2("Temperature Change"),
             plotlyOutput("plotDateTemp"),
             h2("Humidity Check"),
             plotlyOutput("plotDateTemp_2"),
+            # h2("Comfort Zone"),
+            # plotlyOutput("comfort"),
             h2("API Temperature Data Boston"),
             DT::dataTableOutput("tempNew")
             

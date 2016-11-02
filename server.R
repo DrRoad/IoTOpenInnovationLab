@@ -61,7 +61,11 @@ october_Data <- fread('https://www.wunderground.com/history/airport/KBOS/2016/10
 boston_Temp <- rbind(august_Data,september_Data,october_Data)
 # [NOTE: Removing the wind direction column]
 temperatureNew <- boston_Temp %>%
-  dplyr::select(-length(boston_Temp))
+  dplyr::select(-length(boston_Temp)) %>%
+  dplyr::rename(Date = EDT)
+
+temperatureNew$Date <- as.Date.character(temperatureNew$Date, "%Y-%m-%d")
+
 # [NOTE: Changing the events based on dates]
 temperatureNew$Events <- rapply(as.list(temperatureNew$Events),function(x){ifelse(x == "","Normal",x)})
 temperatureNew$Events <- rapply(as.list(temperatureNew$Events),function(x){ifelse(x == "Rain-Thunderstorm","Thunderstorm",x)})
@@ -70,6 +74,14 @@ temperatureNew$Events <- rapply(as.list(temperatureNew$Events),function(x){ifels
 
 # [NOTE: Adding Comfortable Zones]
 temperatureNew$`MeanDew PointF`
+temperatureNew$CZone <- "NA"
+temperatureNew$CZone <- ifelse(temperatureNew$`MeanDew PointF` <= 60,"Comfortable",temperatureNew$CZone)
+temperatureNew$CZone <- ifelse(temperatureNew$`MeanDew PointF` > 60 & temperatureNew$`MeanDew PointF` <= 75,
+       "Sticky",temperatureNew$CZone)
+temperatureNew$CZone <- ifelse(temperatureNew$`MeanDew PointF` > 75,
+       "Miserable",temperatureNew$CZone)
+
+
 
 
 # Building Data
@@ -96,20 +108,20 @@ server <- function(input,output,session) {
       
       # Show Table
       temperatureData <- temperatureNew %>%
-        dplyr::select(EDT,`Mean TemperatureF`,`MeanDew PointF`,
+        dplyr::select(Date,`Mean TemperatureF`,`MeanDew PointF`,
                       `Mean Humidity`,`Mean Sea Level PressureIn`,
                       `Mean VisibilityMiles`,`Mean VisibilityMiles`,
                       CloudCover,Events) %>%
-        dplyr::rename(Date = EDT,TemperatureF = `Mean TemperatureF`,
+        dplyr::rename(TemperatureF = `Mean TemperatureF`,
                       DewPointF = `MeanDew PointF`,Humidity = `Mean Humidity`,
                       Sea_Pressure = `Mean Sea Level PressureIn`,
                       Visibility = `Mean VisibilityMiles`)
       
-      temperatureData$Date <- as.Date.character(temperatureData$Date, "%Y-%m-%d")
+      # temperatureData$Date <- as.Date.character(temperatureData$Date, "%Y-%m-%d")
       
       output$tempNew <- renderDataTable(temperatureData)
       #---------------------------------------------------------------
-      # Plot Date and Temoerature
+      # Plot Date and Temperature
       output$plotDateTemp <- renderPlotly(
                 plot_ly(temperatureData, y = ~TemperatureF, x = ~Date,
                         type = 'scatter',mode = 'line')
@@ -121,25 +133,25 @@ server <- function(input,output,session) {
                 color = ~Humidity, size = ~Humidity)
       )
       
-      
       #---------------------------------------------------------------
-      # output$date <- renderValueBox({
-      #   valueBox(
-      #     value = temperatureNew$Date[(nrow(temperatureNew))],
-      #     subtitle = "Date",
-      #     icon = icon("arrow-down"),
-      #     color = "black"
-      #   )})
+      # Value box description
+      output$date <- renderValueBox({
+        valueBox(
+          value = temperatureNew$Date[(nrow(temperatureNew))],
+          subtitle = "Date",
+          icon = icon("spinner"),
+          color = "yellow"
+        )})
       
       # Show Daily Temperature
-      # output$temp <- renderValueBox({
-      #   valueBox(
-      #     value = sprintf("Temperature: %s", temperatureNew$Temp_Avg[(nrow(temperatureNew))]),
-      #     subtitle = paste(sprintf("High: %s", temperatureNew$Temp_High[nrow(temperatureNew)]),
-      #                      sprintf("Low: %s", temperatureNew$Temp_Low[nrow(temperatureNew)])),
-      #     icon = icon("arrow-down"),
-      #     color = "green"
-      #   )})
+      output$temp <- renderValueBox({
+        valueBox(
+          value = sprintf("Temp %s",round(mean(temperatureNew$`Mean TemperatureF`),2)),
+          subtitle = paste(sprintf("High: %s",round(mean(temperatureNew$`Max TemperatureF`),2)),
+                           sprintf("Low: %s", round(mean(temperatureNew$`Min TemperatureF`),2))),
+          icon = icon("line-chart"),
+          color = "green"
+        )})
       
       
       # output$humidity <- renderValueBox({
