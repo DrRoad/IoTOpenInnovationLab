@@ -28,11 +28,15 @@ header <- dashboardHeader(title = "IoT OpenInnovation Lab")
                 # Service center stats
                 menuItem("Temperature", tabName = "newTempTab",icon = icon("bar-chart"), selected = FALSE),
                 selectInput("month",label = "Select Month",
-                            c("All","May","June","July","August","September","October"),
+                            c("All","May","June","July","August","September","October","November"),
                             multiple = FALSE,selected = c("All")),
                 useShinyjs(),
                 # actionButton("refreshData", "Refresh", class = "customButton")
-                downloadButton('downloadData', 'Download')
+                downloadButton('downloadData', 'Download'),
+                p(),
+                
+                downloadButton('downloadDataRaw', 'Download Raw Data'),
+                p("Download the entire raw data")
                 )
     )
 
@@ -54,12 +58,6 @@ body <- dashboardBody(
               valueBoxOutput("temp",width = 6)
             ),
             h2("Temperature Change"),
-            p("Domain situation, Data, Visual Encoding, Algorithms"),
-            p("Most common approach is top down or we can also start with 
-              bottom up. Have a new visualization and create the data as per
-              your needs. Working backwards."),
-            p("USer study, Lab study and we can alsoohave a new user seetign"),
-            p("User reactions and user inputs"),
             plotlyOutput("plotDateTemp"),
             h2("Humidity Check"),
             plotlyOutput("plotDateTemp_2"),

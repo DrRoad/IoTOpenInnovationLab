@@ -135,11 +135,14 @@ server <- function(input,output,session) {
       }else if(month == "May"){
         temperatureNew <- temperatureNew %>%
           dplyr::filter(Month == month)
+      }else if(month == "November"){
+        temperatureNew <- temperatureNew %>%
+          dplyr::filter(Month == month)
       }else{
         temperatureNew <- temperatureNew
       }
       
-      
+      #---------------------------------------------------------------
       # Show Table
       temperatureData <- temperatureNew %>%
         dplyr::select(Date,`Mean TemperatureF`,`MeanDew PointF`,
@@ -150,8 +153,6 @@ server <- function(input,output,session) {
                       DewPointF = `MeanDew PointF`,Humidity = `Mean Humidity`,
                       Sea_Pressure = `Mean Sea Level PressureIn`,
                       Visibility = `Mean VisibilityMiles`)
-      
-      # temperatureData$Date <- as.Date.character(temperatureData$Date, "%Y-%m-%d")
       
       output$tempNew <- renderDataTable(temperatureData)
       #---------------------------------------------------------------
@@ -186,15 +187,25 @@ server <- function(input,output,session) {
           icon = icon("line-chart"),
           color = "green"
         )})
+      #---------------------------------------------------------------
       
+      #---------------------------------------------------------------
       # Download the csv files 
-      # browser()
       output$downloadData <- downloadHandler(
         filename = function() { paste("raw_Date", '.csv', sep='') },
         content = function(file) {
           write.table(temperatureData,file,row.names = FALSE)
         }
           
+      )
+      
+      # Download the entire CSV File
+      output$downloadDataRaw <- downloadHandler(
+        filename = function() { paste("Entire_Date", '.csv', sep='') },
+        content = function(file) {
+          write.table(temperatureNew,file,row.names = FALSE)
+        }
+        
       )
     
       

@@ -8,7 +8,7 @@ margin-top: 10px;
 }
 
 
-#downloadCenters,#downloadData{
+#downloadCenters,#downloadData,#downloadDataRaw{
 color: black;
 width: 88%; 
 margin-left: 12px; 
