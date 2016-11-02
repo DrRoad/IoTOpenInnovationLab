@@ -50,15 +50,25 @@ clearMap <- function(){
 # temperatureNew <- read.csv("./data/Temperature_Data.csv",header = TRUE)
 # [NOTE: Latest data format] 
 
+
+# May
+may_Data <- fread("https://www.wunderground.com/history/airport/KBOS/2016/5/1/MonthlyHistory.html?req_city=&req_state=&req_statename=&reqdb.zip=&reqdb.magic=&reqdb.wmo=&format=1")
+# June
+june_Date <- fread("https://www.wunderground.com/history/airport/KBOS/2016/6/1/MonthlyHistory.html?req_city=&req_state=&req_statename=&reqdb.zip=&reqdb.magic=&reqdb.wmo=&format=1")
+# July
+july_Data <- fread("https://www.wunderground.com/history/airport/KBOS/2016/7/1/MonthlyHistory.html?req_city=&req_state=&req_statename=&reqdb.zip=&reqdb.magic=&reqdb.wmo=&format=1")
 # August
 august_Data <- fread('https://www.wunderground.com/history/airport/KBOS/2016/8/31/MonthlyHistory.html?req_city=Boston&req_state=MA&req_statename=Massachusetts&reqdb.zip=02120&reqdb.magic=1&reqdb.wmo=99999&format=1')
 # September
 september_Data <- fread('https://www.wunderground.com/history/airport/KBOS/2016/9/1/MonthlyHistory.html?req_city=&req_state=&req_statename=&reqdb.zip=&reqdb.magic=&reqdb.wmo=&format=1')
 # October
 october_Data <- fread('https://www.wunderground.com/history/airport/KBOS/2016/10/31/MonthlyHistory.html?req_city=Boston&req_state=MA&req_statename=Massachusetts&reqdb.zip=02120&reqdb.magic=1&reqdb.wmo=99999&format=1')
+# November
+november_Data <- fread("https://www.wunderground.com/history/airport/KBOS/2016/11/1/MonthlyHistory.html?req_city=&req_state=&req_statename=&reqdb.zip=&reqdb.magic=&reqdb.wmo=&format=1")
 
 # Combining the Data 
-boston_Temp <- rbind(august_Data,september_Data,october_Data)
+boston_Temp <- rbind(may_Data,june_Date,july_Data,august_Data,september_Data,
+                     october_Data,november_Data)
 # [NOTE: Removing the wind direction column]
 temperatureNew <- boston_Temp %>%
   dplyr::select(-length(boston_Temp)) %>%
@@ -81,7 +91,7 @@ temperatureNew$CZone <- ifelse(temperatureNew$`MeanDew PointF` > 60 & temperatur
 temperatureNew$CZone <- ifelse(temperatureNew$`MeanDew PointF` > 75,
        "Miserable",temperatureNew$CZone)
 
-
+temperatureNew$Month <- format(temperatureNew$Date, "%B")
 
 
 # Building Data
@@ -103,8 +113,32 @@ server <- function(input,output,session) {
 
   })
   
-  observeEvent(input$refreshData,{
+  observe({
     withProgress({
+      month <- input$month
+      # Filter Data As per Month selected
+      if (month == "August") {
+        temperatureNew <- temperatureNew %>%
+          dplyr::filter(Month == month)
+      }else if(month == "September"){
+        temperatureNew <- temperatureNew %>%
+          dplyr::filter(Month == month)
+      }else if(month == "October"){
+        temperatureNew <- temperatureNew %>%
+          dplyr::filter(Month == month)
+      }else if(month == "July"){
+        temperatureNew <- temperatureNew %>%
+          dplyr::filter(Month == month)
+      }else if(month == "June"){
+        temperatureNew <- temperatureNew %>%
+          dplyr::filter(Month == month)
+      }else if(month == "May"){
+        temperatureNew <- temperatureNew %>%
+          dplyr::filter(Month == month)
+      }else{
+        temperatureNew <- temperatureNew
+      }
+      
       
       # Show Table
       temperatureData <- temperatureNew %>%
@@ -129,7 +163,7 @@ server <- function(input,output,session) {
       
       output$plotDateTemp_2 <- renderPlotly(
         plot_ly(temperatureData, x = ~Humidity, y = ~TemperatureF,
-                text = ~paste("Date: ", Date, '<br>Humidity:', Humidity),
+                text = ~paste("Month: ", Date, '<br>Humidity:', Humidity),
                 color = ~Humidity, size = ~Humidity)
       )
       
@@ -153,25 +187,15 @@ server <- function(input,output,session) {
           color = "green"
         )})
       
-      
-      # output$humidity <- renderValueBox({
-      #   valueBox(
-      #     value = sprintf("Humidity: %s", temperatureNew$Humidity_Avg[(nrow(temperatureNew))]),
-      #     subtitle = paste(sprintf("High: %s", temperatureNew$Humidity_High[nrow(temperatureNew)]),
-      #                      sprintf("Low: %s", temperatureNew$Humidity_Low[nrow(temperatureNew)])),
-      #     icon = icon("arrow-down"),
-      #     color = "yellow"
-      #   )})
-      
-      
-      # output$wind <- renderValueBox({
-      #   valueBox(
-      #     value = sprintf("Wind: %s", temperatureNew$Wind_Avg[(nrow(temperatureNew))]),
-      #     subtitle = paste(sprintf("High: %s", temperatureNew$Wind_High[nrow(temperatureNew)]),
-      #                      sprintf("Low: %s", temperatureNew$Wind_Low[nrow(temperatureNew)])),
-      #     icon = icon("arrow-down"),
-      #     color = "blue"
-      #   )})
+      # Download the csv files 
+      # browser()
+      output$downloadData <- downloadHandler(
+        filename = function() { paste("raw_Date", '.csv', sep='') },
+        content = function(file) {
+          write.table(temperatureData,file,row.names = FALSE)
+        }
+          
+      )
     
       
     }

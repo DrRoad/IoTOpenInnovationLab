@@ -25,19 +25,14 @@ header <- dashboardHeader(title = "IoT OpenInnovation Lab")
     width = 200,
     sidebarMenu(id = "sidebarmenu",
                 p(),
-                # # Client Analysis MenuBar
-                # menuItem("Temperature Analysis", tabName = "clientData", 
-                #          icon = icon("globe"),selected = TRUE),
-                # useShinyjs(),
-                # selectInput("buildingName", label = "Select Building",
-                #             c("Dodge Hall","Ell Hall"),
-                #             multiple = FALSE, selected = c("Dodge Hall")),
-                
-                
                 # Service center stats
                 menuItem("Temperature", tabName = "newTempTab",icon = icon("bar-chart"), selected = FALSE),
+                selectInput("month",label = "Select Month",
+                            c("All","May","June","July","August","September","October"),
+                            multiple = FALSE,selected = c("All")),
                 useShinyjs(),
-                actionButton("refreshData", "Refresh", class = "customButton")
+                # actionButton("refreshData", "Refresh", class = "customButton")
+                downloadButton('downloadData', 'Download')
                 )
     )
 
@@ -54,18 +49,17 @@ body <- dashboardBody(
     tabItem(tabName = "newTempTab",
             includeScript('www/Control.Loading.js'),
             # Value Info Box
-            # div(
-            #   valueBoxOutput("date",width = 5)
-            #   # valueBoxOutput("temp",width = 5),
-            #   # valueBoxOutput("humidity",width = 5),
-            #   # valueBoxOutput("wind",width = 5)
-            # 
-            # ),
             fluidRow(
               valueBoxOutput("date",width = 5),
               valueBoxOutput("temp",width = 6)
             ),
             h2("Temperature Change"),
+            p("Domain situation, Data, Visual Encoding, Algorithms"),
+            p("Most common approach is top down or we can also start with 
+              bottom up. Have a new visualization and create the data as per
+              your needs. Working backwards."),
+            p("USer study, Lab study and we can alsoohave a new user seetign"),
+            p("User reactions and user inputs"),
             plotlyOutput("plotDateTemp"),
             h2("Humidity Check"),
             plotlyOutput("plotDateTemp_2"),
