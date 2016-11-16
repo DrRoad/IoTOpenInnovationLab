@@ -65,6 +65,8 @@ september_Data <- fread('https://www.wunderground.com/history/airport/KBOS/2016/
 october_Data <- fread('https://www.wunderground.com/history/airport/KBOS/2016/10/31/MonthlyHistory.html?req_city=Boston&req_state=MA&req_statename=Massachusetts&reqdb.zip=02120&reqdb.magic=1&reqdb.wmo=99999&format=1')
 # November
 november_Data <- fread("https://www.wunderground.com/history/airport/KBOS/2016/11/1/MonthlyHistory.html?req_city=&req_state=&req_statename=&reqdb.zip=&reqdb.magic=&reqdb.wmo=&format=1")
+november_Data <- november_Data %>%
+  dplyr::rename(EDT = EST)
 
 # Combining the Data 
 boston_Temp <- rbind(may_Data,june_Date,july_Data,august_Data,september_Data,
@@ -96,6 +98,21 @@ temperatureNew$Month <- format(temperatureNew$Date, "%B")
 
 # Building Data
 buildingData <- read.csv("./data/locationBuilding.csv",header = TRUE)
+
+# Charts Data
+# data <- readRDS("./data/healthexp.Rds")
+# write.csv(x = data,file = "Health.csv",row.names = FALSE)
+dataHealth <- read.csv("./data/Health.csv",header = TRUE)
+dataHealth$Region <- as.factor(dataHealth$Region)
+
+# Dummy Data
+n <- 250
+x <- c(runif(n-2, 0, 4), 2, 2.1)
+y <- 2*x + rnorm(n, sd=2)
+draw.data <- data.frame(x=x,y=y)
+
+
+
 
 ##############################
 # Server #
@@ -167,7 +184,6 @@ server <- function(input,output,session) {
                 text = ~paste("Month: ", Date, '<br>Humidity:', Humidity),
                 color = ~Humidity, size = ~Humidity)
       )
-      
       #---------------------------------------------------------------
       # Value box description
       output$date <- renderValueBox({
@@ -196,7 +212,6 @@ server <- function(input,output,session) {
         content = function(file) {
           write.table(temperatureData,file,row.names = FALSE)
         }
-          
       )
       
       # Download the entire CSV File
@@ -207,7 +222,108 @@ server <- function(input,output,session) {
         }
         
       )
+      
+      
+      # Dummy Rregession
+      mydata <- draw.data
+      
+      lmResults <- reactive({
+        regress.exp <- "y~x"
+        lm(regress.exp, data=mydata)
+      })
+      
+      # Show plot of points, regression line, residuals
+      output$scatter <- renderPlot({
+        data1 <- mydata
+        x <- data1$x
+        y <- data1$y
+
+        #used for confidence interval
+        xcon <- seq(min(x)-.1, max(x)+.1, .025)
+
+        predictor <- data.frame(x=xcon)
+
+        yhat <- predict(lmResults())
+        yline <- predict(lmResults(), predictor)
+
+        par(cex.main=1.5, cex.lab=1.5, cex.axis=1.5, mar = c(4,4,4,1))
+
+        r.squared = round(summary(lmResults())$r.squared, 4)
+        corr.coef = round(sqrt(r.squared), 4)
+
+        plot(c(min(x),max(x))
+             ,c(min(y,yline),max(y,yline)),
+             type="n",
+             xlab="x",
+             ylab="y",
+             main=paste0("Regression Model\n","(R = ", corr.coef,", ", "R-squared = ", r.squared,")"))
+
+
+        newx <- seq(min(data1$x), max(data1$x), length.out=400)
+        confs <- predict(lmResults(), newdata = data.frame(x=newx),
+                         interval = 'confidence')
+        preds <- predict(lmResults(), newdata = data.frame(x=newx),
+                         interval = 'predict')
+
+        polygon(c(rev(newx), newx), c(rev(preds[ ,3]), preds[ ,2]), col = grey(.95), border = NA)
+        polygon(c(rev(newx), newx), c(rev(confs[ ,3]), confs[ ,2]), col = grey(.75), border = NA)
+
+        points(x,y,pch=19, col=COL[1,2])
+        lines(xcon, yline, lwd=2, col=COL[1])
+        box()
+      })
     
+      # Residual Plots
+      output$residuals <- renderPlot({
+        par(mfrow=c(1,3), cex.main=2, cex.lab=2, cex.axis=2, mar=c(4,5,2,2))
+        residuals = summary(lmResults())$residuals
+        predicted = predict(lmResults(), newdata = data.frame(x=mydata$x))
+        plot(residuals ~ predicted, 
+             main="Residuals vs. Fitted Values", xlab="Fitted Values", ylab="Residuals", 
+             pch=19, col = COL[1,2])
+        abline(h = 0, lty = 2)
+        d = density(residuals)$y
+        h = hist(residuals, plot = FALSE)
+        hist(residuals, main="Histogram of Residuals", xlab="Residuals", 
+             col=COL[1,2], prob = TRUE, ylim = c(0,max(max(d), max(h$density))))
+        lines(density(residuals), col = COL[1], lwd = 2)
+        qqnorm(residuals, pch=19, col = COL[1,2], main = "Normal Q-Q Plot of Residuals")
+        qqline(residuals, col = COL[1], lwd = 2)
+      }, height=280 )
+      
+      # Automated file
+      defaultColors <- c("#3366cc", "#dc3912", "#ff9900", "#109618", "#990099", "#0099c6", "#dd4477")
+      series <- structure(
+        lapply(defaultColors, function(color) { list(color=color) }),
+        names = levels(dataHealth$Region)
+      )
+
+      
+      yearData <- reactive({
+        # Filter to the desired year, and put the columns
+        # in the order that Google's Bubble Chart expects
+        # them (name, x, y, color, size). Also sort by region
+        # so that Google Charts orders and colors the regions
+        # consistently.
+        df <- dataHealth %>%
+          dplyr::filter(Year == input$year) %>%
+          dplyr::select(Country, Health.Expenditure, Life.Expectancy,
+                 Region, Population) %>%
+          arrange(Region)
+      })
+      
+      output$chart <- reactive({
+        # Return the data and options
+        list(
+          data = googleDataTable(yearData()),
+          options = list(
+            title = sprintf(
+              "Health expenditure vs. life expectancy, %s",
+              input$year),
+            series = series
+          )
+        )
+      })
       
     }
     )
