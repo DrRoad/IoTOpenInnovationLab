@@ -50,6 +50,7 @@ clearMap <- function(){
 # temperatureNew <- read.csv("./data/Temperature_Data.csv",header = TRUE)
 # [NOTE: Latest data format] 
 
+# data <- fread("http://www.wunderground.com/history/airport/BOS/2011/1/1/CustomHistory.html?dayend=28&monthend=2&yearend=2017&req_city=NA&req_state=NA&req_statename=NA&format=1")
 
 # May
 may_Data <- fread("https://www.wunderground.com/history/airport/KBOS/2016/5/1/MonthlyHistory.html?req_city=&req_state=&req_statename=&reqdb.zip=&reqdb.magic=&reqdb.wmo=&format=1")
@@ -64,13 +65,13 @@ september_Data <- fread('https://www.wunderground.com/history/airport/KBOS/2016/
 # October
 october_Data <- fread('https://www.wunderground.com/history/airport/KBOS/2016/10/31/MonthlyHistory.html?req_city=Boston&req_state=MA&req_statename=Massachusetts&reqdb.zip=02120&reqdb.magic=1&reqdb.wmo=99999&format=1')
 # November
-november_Data <- fread("https://www.wunderground.com/history/airport/KBOS/2016/11/1/MonthlyHistory.html?req_city=&req_state=&req_statename=&reqdb.zip=&reqdb.magic=&reqdb.wmo=&format=1")
-november_Data <- november_Data %>%
-  dplyr::rename(EDT = EST)
+november_Data <- fread("https://www.wunderground.com/history/airport/KBOS/2016/11/30/MonthlyHistory.html?req_city=&req_state=&req_statename=&reqdb.zip=&reqdb.magic=&reqdb.wmo=&format=1")
+# november_Data <- november_Data %>%
+#   dplyr::rename(EDT = EST)
 
 # Combining the Data 
 boston_Temp <- rbind(may_Data,june_Date,july_Data,august_Data,september_Data,
-                     october_Data,november_Data)
+                     october_Data,november_Data,fill=TRUE)
 # [NOTE: Removing the wind direction column]
 temperatureNew <- boston_Temp %>%
   dplyr::select(-length(boston_Temp)) %>%
@@ -102,8 +103,8 @@ buildingData <- read.csv("./data/locationBuilding.csv",header = TRUE)
 # Charts Data
 # data <- readRDS("./data/healthexp.Rds")
 # write.csv(x = data,file = "Health.csv",row.names = FALSE)
-dataHealth <- read.csv("./data/Health.csv",header = TRUE)
-dataHealth$Region <- as.factor(dataHealth$Region)
+# dataHealth <- read.csv("/Users/mavezsinghdabas/Desktop/New_Stuff/NEU/ResearchAssistant/Shiny_Portfolio/client/IoTOpenInnovationLab/data/Health.csv",header = TRUE)
+# dataHealth$Region <- as.factor(dataHealth$Region)
 
 # Dummy Data
 n <- 250
@@ -153,6 +154,9 @@ server <- function(input,output,session) {
         temperatureNew <- temperatureNew %>%
           dplyr::filter(Month == month)
       }else if(month == "November"){
+        temperatureNew <- temperatureNew %>%
+          dplyr::filter(Month == month)
+      }else if(month == "December"){
         temperatureNew <- temperatureNew %>%
           dplyr::filter(Month == month)
       }else{
@@ -292,38 +296,38 @@ server <- function(input,output,session) {
       }, height=280 )
       
       # Automated file
-      defaultColors <- c("#3366cc", "#dc3912", "#ff9900", "#109618", "#990099", "#0099c6", "#dd4477")
-      series <- structure(
-        lapply(defaultColors, function(color) { list(color=color) }),
-        names = levels(dataHealth$Region)
-      )
+      # defaultColors <- c("#3366cc", "#dc3912", "#ff9900", "#109618", "#990099", "#0099c6", "#dd4477")
+      # series <- structure(
+      #   lapply(defaultColors, function(color) { list(color=color) }),
+      #   names = levels(dataHealth$Region)
+      # )
 
+  
+      # yearData <- reactive({
+      #   # Filter to the desired year, and put the columns
+      #   # in the order that Google's Bubble Chart expects
+      #   # them (name, x, y, color, size). Also sort by region
+      #   # so that Google Charts orders and colors the regions
+      #   # consistently.
+      #   df <- dataHealth %>%
+      #     dplyr::filter(Year == input$year) %>%
+      #     dplyr::select(Country, Health.Expenditure, Life.Expectancy,
+      #            Region, Population) %>%
+      #     arrange(Region)
+      # })
       
-      yearData <- reactive({
-        # Filter to the desired year, and put the columns
-        # in the order that Google's Bubble Chart expects
-        # them (name, x, y, color, size). Also sort by region
-        # so that Google Charts orders and colors the regions
-        # consistently.
-        df <- dataHealth %>%
-          dplyr::filter(Year == input$year) %>%
-          dplyr::select(Country, Health.Expenditure, Life.Expectancy,
-                 Region, Population) %>%
-          arrange(Region)
-      })
-      
-      output$chart <- reactive({
-        # Return the data and options
-        list(
-          data = googleDataTable(yearData()),
-          options = list(
-            title = sprintf(
-              "Health expenditure vs. life expectancy, %s",
-              input$year),
-            series = series
-          )
-        )
-      })
+      # output$chart <- reactive({
+      #   # Return the data and options
+      #   list(
+      #     data = googleDataTable(yearData()),
+      #     options = list(
+      #       title = sprintf(
+      #         "Health expenditure vs. life expectancy, %s",
+      #         input$year),
+      #       series = series
+      #     )
+      #   )
+      # })
       
     }
     )
